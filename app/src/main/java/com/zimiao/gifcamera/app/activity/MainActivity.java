@@ -1,10 +1,12 @@
-package com.zimiao.gifcamera.app;
+package com.zimiao.gifcamera.app.activity;
 
 import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
+
+import com.zimiao.gifcamera.app.R;
 
 
 public class MainActivity extends Activity {
@@ -26,5 +28,6 @@ public class MainActivity extends Activity {
 
         mButton = findViewById(R.id.record_button);
         mButton.setOnClickListener(mOnclickListener);
+
     }
 }

@@ -1,10 +1,12 @@
-package com.zimiao.gifcamera.app;
+package com.zimiao.gifcamera.app.widget;
 
 import android.content.Context;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
+
+import com.zimiao.gifcamera.app.util.Constants;
 
 import java.io.IOException;
 
