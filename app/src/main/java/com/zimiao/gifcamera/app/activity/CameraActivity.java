@@ -26,6 +26,7 @@ public class CameraActivity extends Activity {
     private FrameLayout mPreviewView;
     private View mButton;
 
+
     private PictureCallback mPicture = new PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -47,6 +48,7 @@ public class CameraActivity extends Activity {
             } catch (IOException e) {
                 Log.d(Constants.TAG, "Error accessing file: " + e.getMessage());
             }
+            mCamera.startPreview();
         }
     };
 
@@ -61,7 +63,6 @@ public class CameraActivity extends Activity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        // get an image from the camera
                         mCamera.takePicture(null, null, mPicture);
                     }
                 }
