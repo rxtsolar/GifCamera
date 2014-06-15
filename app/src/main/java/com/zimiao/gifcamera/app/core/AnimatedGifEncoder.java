@@ -1,6 +1,10 @@
+package com.zimiao.gifcamera.app.core;
+
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+
 import java.io.*;
-import java.awt.*;
-import java.awt.image.*;
 
 /**
  * Class AnimatedGifEncoder - Encodes a GIF file consisting of one or
@@ -28,13 +32,13 @@ public class AnimatedGifEncoder {
 
     protected int width; // image size
     protected int height;
-    protected Color transparent = null; // transparent color if given
+    protected int transparent = -1; // transparent color if given
     protected int transIndex; // transparent index in color table
     protected int repeat = -1; // no repeat
     protected int delay = 0; // frame delay (hundredths)
     protected boolean started = false; // ready to output frames
     protected OutputStream out;
-    protected BufferedImage image; // current frame
+    protected Bitmap image; // current frame
     protected byte[] pixels; // BGR byte array from frame
     protected byte[] indexedPixels; // converted frame indexed to palette
     protected int colorDepth; // number of bit planes
@@ -93,9 +97,9 @@ public class AnimatedGifEncoder {
      * becomes the transparent color for that frame.
      * May be set to null to indicate no transparent color.
      *
-     * @param c Color to be treated as transparent on display.
+     * @param c int to be treated as transparent on display.
      */
-    public void setTransparent(Color c) {
+    public void setTransparent(int c) {
         transparent = c;
     }
 
@@ -106,10 +110,10 @@ public class AnimatedGifEncoder {
      * frames.  If <code>setSize</code> was not invoked, the size of the
      * first image is used for all subsequent frames.
      *
-     * @param im BufferedImage containing frame to write.
+     * @param im Bitmap containing frame to write.
      * @return true if successful.
      */
-    public boolean addFrame(BufferedImage im) {
+    public boolean addFrame(Bitmap im) {
         if ((im == null) || !started) {
             return false;
         }
@@ -150,7 +154,8 @@ public class AnimatedGifEncoder {
      * closed.
      */
     public boolean finish() {
-        if (!started) return false;
+        if (!started)
+            return false;
         boolean ok = true;
         started = false;
         try {
@@ -200,7 +205,8 @@ public class AnimatedGifEncoder {
      * @return
      */
     public void setQuality(int quality) {
-        if (quality < 1) quality = 1;
+        if (quality < 1)
+            quality = 1;
         sample = quality;
     }
 
@@ -213,11 +219,14 @@ public class AnimatedGifEncoder {
      * @param h int frame width.
      */
     public void setSize(int w, int h) {
-        if (started && !firstFrame) return;
+        if (started && !firstFrame)
+            return;
         width = w;
         height = h;
-        if (width < 1) width = 320;
-        if (height < 1) height = 240;
+        if (width < 1)
+            width = 320;
+        if (height < 1)
+            height = 240;
         sizeSet = true;
     }
 
@@ -229,7 +238,8 @@ public class AnimatedGifEncoder {
      * @return false if initial write failed.
      */
     public boolean start(OutputStream os) {
-        if (os == null) return false;
+        if (os == null)
+            return false;
         boolean ok = true;
         closeStream = false;
         out = os;
@@ -290,7 +300,7 @@ public class AnimatedGifEncoder {
         colorDepth = 8;
         palSize = 7;
         // get closest match to transparent color if specified
-        if (transparent != null) {
+        if (transparent != -1) {
             transIndex = findClosest(transparent);
         }
     }
@@ -299,11 +309,12 @@ public class AnimatedGifEncoder {
      * Returns index of palette color closest to c
      *
      */
-    protected int findClosest(Color c) {
-        if (colorTab == null) return -1;
-        int r = c.getRed();
-        int g = c.getGreen();
-        int b = c.getBlue();
+    protected int findClosest(int c) {
+        if (colorTab == null)
+            return -1;
+        int r = (c >> 16) & 0xff;
+        int g = (c >> 8) & 0xff;
+        int b = c & 0xff;
         int minpos = 0;
         int dmin = 256 * 256 * 256;
         int len = colorTab.length;
@@ -328,18 +339,22 @@ public class AnimatedGifEncoder {
     protected void getImagePixels() {
         int w = image.getWidth();
         int h = image.getHeight();
-        int type = image.getType();
-        if ((w != width)
-                || (h != height)
-                || (type != BufferedImage.TYPE_3BYTE_BGR)) {
+        if ((w != width) || (h != height)) {
             // create new image with right size/format
-            BufferedImage temp =
-                new BufferedImage(width, height, BufferedImage.TYPE_3BYTE_BGR);
-            Graphics2D g = temp.createGraphics();
-            g.drawImage(image, 0, 0, null);
+            Bitmap temp = Bitmap.createBitmap(width, height, Bitmap.Config.RGB_565);
+            Canvas g = new Canvas(temp);
+            g.drawBitmap(image, 0, 0, new Paint());
             image = temp;
         }
-        pixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
+        int[] data = new int[w * h];
+        image.getPixels(data, 0, w, 0, 0, w, h);
+        pixels = new byte[data.length * 3];
+        for (int i = 0; i < data.length; i++) {
+            int v = data[i];
+            pixels[i * 3] = (byte)(v & 0xff);
+            pixels[i * 3 + 1] = (byte)((v >> 8) & 0xff);
+            pixels[i * 3 + 2] = (byte)((v >> 16) & 0xff);
+        }
     }
 
     /**
@@ -350,7 +365,7 @@ public class AnimatedGifEncoder {
         out.write(0xf9); // GCE label
         out.write(4); // data block size
         int transp, disp;
-        if (transparent == null) {
+        if (transparent == -1) {
             transp = 0;
             disp = 0; // dispose = no action
         } else {
