@@ -39,7 +39,7 @@ public final class MediaFileHelper {
         // Create a media file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         File mediaFile;
-        String imagePath = mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".jpg";
+        String imagePath = mediaStorageDir.getPath() + File.separator + "IMG_"+ timeStamp + ".gif";
         String videoPath = mediaStorageDir.getPath() + File.separator + "VID_"+ timeStamp + ".mp4";
         if (type == MEDIA_TYPE_IMAGE){
             mediaFile = new File(imagePath);

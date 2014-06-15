@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.FrameLayout;
 
 import com.zimiao.gifcamera.app.R;
+import com.zimiao.gifcamera.app.core.AnimatedGifEncoder;
 import com.zimiao.gifcamera.app.util.Constants;
 import com.zimiao.gifcamera.app.util.MediaFileHelper;
 import com.zimiao.gifcamera.app.widget.CameraPreview;
@@ -45,8 +46,11 @@ public class CameraActivity extends Activity {
             try {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                 FileOutputStream fos = new FileOutputStream(file);
+                AnimatedGifEncoder encoder = new AnimatedGifEncoder();
                 bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
-                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos);
+                encoder.start(fos);
+                encoder.addFrame(bitmap);
+                encoder.finish();
                 // Send broadcast so Gallery will scan for the new media.
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
                         MediaFileHelper.getOutputMediaFileUri(file)));
