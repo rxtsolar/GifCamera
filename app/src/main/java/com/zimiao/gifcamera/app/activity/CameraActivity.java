@@ -2,6 +2,8 @@ package com.zimiao.gifcamera.app.activity;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.os.Bundle;
@@ -28,6 +30,10 @@ public class CameraActivity extends Activity {
 
 
     private PictureCallback mPicture = new PictureCallback() {
+        final int outputWidth = 640;
+        final int outputHeight = 480;
+        final int quality = 90;
+
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
 
@@ -37,9 +43,10 @@ public class CameraActivity extends Activity {
                 return;
             }
             try {
+                Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                 FileOutputStream fos = new FileOutputStream(file);
-                fos.write(data);
-                fos.close();
+                bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, fos);
                 // Send broadcast so Gallery will scan for the new media.
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
                         MediaFileHelper.getOutputMediaFileUri(file)));
