@@ -20,7 +20,6 @@ import com.zimiao.gifcamera.app.widget.CameraPreview;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.List;
 
 public class CameraActivity extends Activity {
@@ -28,7 +27,6 @@ public class CameraActivity extends Activity {
     private Camera mCamera;
     private CameraPreview mPreview;
     private FrameLayout mPreviewView;
-    private View mButton;
 
     private PictureCallback mPicture = new PictureCallback() {
         private final int outputWidth = 320;
@@ -44,7 +42,7 @@ public class CameraActivity extends Activity {
             }
             try {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                bitmap = bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
+                bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
                 FileOutputStream fos = new FileOutputStream(file);
                 AnimatedGifEncoder encoder = new AnimatedGifEncoder();
                 encoder.start(fos);
@@ -55,8 +53,6 @@ public class CameraActivity extends Activity {
                         MediaFileHelper.getOutputMediaFileUri(file)));
             } catch (FileNotFoundException e) {
                 Log.d(Constants.TAG, "File not found: " + e.getMessage());
-            } catch (IOException e) {
-                Log.d(Constants.TAG, "Error accessing file: " + e.getMessage());
             }
             mCamera.startPreview();
         }
@@ -68,8 +64,9 @@ public class CameraActivity extends Activity {
         setContentView(R.layout.camera_layout);
 
         mPreviewView = (FrameLayout) findViewById(R.id.camera_preview);
-        mButton = findViewById(R.id.button_capture);
-        mButton.setOnClickListener(
+
+        View button = findViewById(R.id.button_capture);
+        button.setOnClickListener(
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {

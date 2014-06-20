@@ -80,7 +80,6 @@ public class AnimatedGifEncoder {
      * image is added.
      *
      * @param iter int number of iterations.
-     * @return
      */
     public void setRepeat(int iter) {
         if (iter >= 0) {
