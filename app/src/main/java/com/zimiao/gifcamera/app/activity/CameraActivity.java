@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
 
 public class CameraActivity extends Activity {
 
@@ -29,11 +30,9 @@ public class CameraActivity extends Activity {
     private FrameLayout mPreviewView;
     private View mButton;
 
-
     private PictureCallback mPicture = new PictureCallback() {
-        final int outputWidth = 640;
-        final int outputHeight = 480;
-        final int quality = 90;
+        private final int outputWidth = 320;
+        private final int outputHeight = 240;
 
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
@@ -45,9 +44,9 @@ public class CameraActivity extends Activity {
             }
             try {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
+                bitmap = bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
                 FileOutputStream fos = new FileOutputStream(file);
                 AnimatedGifEncoder encoder = new AnimatedGifEncoder();
-                bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
                 encoder.start(fos);
                 encoder.addFrame(bitmap);
                 encoder.finish();
@@ -95,6 +94,12 @@ public class CameraActivity extends Activity {
 
         // Create an instance of Camera
         mCamera = getCameraInstance();
+
+        Camera.Parameters params = mCamera.getParameters();
+        List<Camera.Size> supportedSizes = params.getSupportedPictureSizes();
+        Camera.Size size = supportedSizes.get(supportedSizes.size() - 1);
+        params.setPictureSize(size.width, size.height);
+        mCamera.setParameters(params);
 
         // Create our Preview view and set it as the content of our activity.
         mPreview = new CameraPreview(this, mCamera);
