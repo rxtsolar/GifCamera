@@ -21,12 +21,41 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class CameraActivity extends Activity {
 
     private Camera mCamera;
     private CameraPreview mPreview;
     private FrameLayout mPreviewView;
+    private AnimatedGifEncoder mEncoder = new AnimatedGifEncoder();
+    private Timer mTimer = new Timer();
+    private boolean first = false;
+    private boolean last = false;
+    private int delay = 1000;
+    private int frames = 10;
+
+    private class TakePictureTask extends TimerTask {
+        @Override
+        public void run() {
+            mCamera.takePicture(null, null, mPicture);
+        }
+    }
+    private class TakeFirstPictureTask extends TimerTask {
+        @Override
+        public void run() {
+            first = true;
+            mCamera.takePicture(null, null, mPicture);
+        }
+    }
+    private class TakeLastPictureTask extends TimerTask {
+        @Override
+        public void run() {
+            last = true;
+            mCamera.takePicture(null, null, mPicture);
+        }
+    }
 
     private PictureCallback mPicture = new PictureCallback() {
         private final int outputWidth = 320;
@@ -43,11 +72,17 @@ public class CameraActivity extends Activity {
             try {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                 bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
-                FileOutputStream fos = new FileOutputStream(file);
-                AnimatedGifEncoder encoder = new AnimatedGifEncoder();
-                encoder.start(fos);
-                encoder.addFrame(bitmap);
-                encoder.finish();
+                if (first) {
+                    FileOutputStream fos = new FileOutputStream(file);
+                    mEncoder.start(fos);
+                    mEncoder.setDelay(delay);
+                    first = false;
+                }
+                mEncoder.addFrame(bitmap);
+                if (last) {
+                    mEncoder.finish();
+                    last = false;
+                }
                 // Send broadcast so Gallery will scan for the new media.
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
                         MediaFileHelper.getOutputMediaFileUri(file)));
@@ -70,7 +105,11 @@ public class CameraActivity extends Activity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mCamera.takePicture(null, null, mPicture);
+                        mTimer.schedule(new TakeFirstPictureTask(), 0);
+                        for (int i = 1; i < frames - 1; i++) {
+                            mTimer.schedule(new TakePictureTask(), i * delay);
+                        }
+                        mTimer.schedule(new TakeLastPictureTask(), (frames - 1) * delay);
                     }
                 }
         );
@@ -116,4 +155,3 @@ public class CameraActivity extends Activity {
         return c;
     }
 }
-
