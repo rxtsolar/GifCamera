@@ -24,17 +24,41 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class CameraActivity extends Activity {
+public class CameraActivity extends Activity implements CameraPreview.ActivityListener {
 
     private Camera mCamera;
     private CameraPreview mPreview;
     private FrameLayout mPreviewView;
     private AnimatedGifEncoder mEncoder = new AnimatedGifEncoder();
     private Timer mTimer = new Timer();
-    private boolean first = false;
-    private boolean last = false;
-    private int delay = 1000;
-    private int frames = 10;
+    private boolean mFirst = false;
+    private boolean mLast = false;
+    private int mDelay = 1000;
+    private int mFrames = 10;
+    private boolean mIsRecord = false;
+    private final int mOutputWidth = 320;
+    private final int mOutputHeight = 240;
+
+    // Implementation of ActivityListener
+
+    @Override
+    public void sendBroadcast(File file) {
+        // Send broadcast so Gallery will scan for the new media.
+        sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
+                MediaFileHelper.getOutputMediaFileUri(file)));
+    }
+
+    @Override
+    public boolean isRecord() {
+        return mIsRecord;
+    }
+
+    @Override
+    public void resetRecord() {
+        mIsRecord = false;
+    }
+
+    // End implementation of ActivityListener
 
     private class TakePictureTask extends TimerTask {
         @Override
@@ -45,22 +69,19 @@ public class CameraActivity extends Activity {
     private class TakeFirstPictureTask extends TimerTask {
         @Override
         public void run() {
-            first = true;
+            mFirst = true;
             mCamera.takePicture(null, null, mPicture);
         }
     }
     private class TakeLastPictureTask extends TimerTask {
         @Override
         public void run() {
-            last = true;
+            mLast = true;
             mCamera.takePicture(null, null, mPicture);
         }
     }
 
     private PictureCallback mPicture = new PictureCallback() {
-        private final int outputWidth = 320;
-        private final int outputHeight = 240;
-
         @Override
         public void onPictureTaken(byte[] data, Camera camera) {
 
@@ -71,21 +92,18 @@ public class CameraActivity extends Activity {
             }
             try {
                 Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-                bitmap = Bitmap.createScaledBitmap(bitmap, outputWidth, outputHeight, true);
-                if (first) {
+                bitmap = Bitmap.createScaledBitmap(bitmap, mOutputWidth, mOutputHeight, true);
+                if (mFirst) {
                     FileOutputStream fos = new FileOutputStream(file);
                     mEncoder.start(fos);
-                    mEncoder.setDelay(delay);
-                    first = false;
+                    mEncoder.setDelay(mDelay);
+                    mFirst = false;
                 }
                 mEncoder.addFrame(bitmap);
-                if (last) {
+                if (mLast) {
                     mEncoder.finish();
-                    last = false;
+                    mLast = false;
                 }
-                // Send broadcast so Gallery will scan for the new media.
-                sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE,
-                        MediaFileHelper.getOutputMediaFileUri(file)));
             } catch (FileNotFoundException e) {
                 Log.d(Constants.TAG, "File not found: " + e.getMessage());
             }
@@ -105,11 +123,7 @@ public class CameraActivity extends Activity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mTimer.schedule(new TakeFirstPictureTask(), 0);
-                        for (int i = 1; i < frames - 1; i++) {
-                            mTimer.schedule(new TakePictureTask(), i * delay);
-                        }
-                        mTimer.schedule(new TakeLastPictureTask(), (frames - 1) * delay);
+                        mIsRecord = true;
                     }
                 }
         );
@@ -138,7 +152,8 @@ public class CameraActivity extends Activity {
         mCamera.setParameters(params);
 
         // Create our Preview view and set it as the content of our activity.
-        mPreview = new CameraPreview(this, mCamera);
+        mPreview = new CameraPreview(this, mCamera, this);
+
         mPreviewView.addView(mPreview);
     }
 
